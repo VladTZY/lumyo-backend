@@ -14,6 +14,9 @@ Rails.application.routes.draw do
 
   resource :autocategorize_all, only: [ :create ], controller: "autocategorize_all"
   resources :categories, only: [ :index, :show, :create, :update, :destroy ]
+  resources :chats, only: [ :index, :show, :create, :update, :destroy ] do
+    resources :messages, only: [ :create ]
+  end
   resources :notes, only: [ :index, :show, :create, :update, :destroy ] do
     resource :summary, only: [ :show, :create ], controller: "note_summaries"
     resource :autocategorize, only: [ :create ], controller: "note_autocategorize"

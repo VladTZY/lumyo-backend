@@ -2,7 +2,7 @@ class NotesController < ApplicationController
   before_action :set_note, only: [ :show, :update, :destroy ]
 
   def index
-    render json: current_user.notes.includes(:categories, :note_summary), include: [:categories, :note_summary]
+    render json: current_user.notes.includes(:categories, :note_summary).order(updated_at: :desc), include: [:categories, :note_summary]
   end
 
   def show

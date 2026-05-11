@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_21_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_11_132245) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,12 +22,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_000001) do
     t.index ["user_id"], name: "index_categories_on_user_id"
   end
 
+  create_table "chats", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "source_note_ids", default: []
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_chats_on_user_id"
+  end
+
   create_table "jwt_denylists", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "exp"
     t.string "jti"
     t.datetime "updated_at", null: false
     t.index ["jti"], name: "index_jwt_denylists_on_jti"
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.bigint "chat_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.string "role", null: false
+    t.jsonb "sources", default: []
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
   create_table "note_categories", force: :cascade do |t|
@@ -53,6 +72,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_000001) do
   create_table "notes", force: :cascade do |t|
     t.text "content"
     t.datetime "created_at", null: false
+    t.boolean "pinecone_uploaded", default: false, null: false
+    t.datetime "pinecone_uploaded_at"
     t.string "title"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
@@ -72,6 +93,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_000001) do
   end
 
   add_foreign_key "categories", "users"
+  add_foreign_key "chats", "users"
+  add_foreign_key "messages", "chats"
   add_foreign_key "note_categories", "categories"
   add_foreign_key "note_categories", "notes"
   add_foreign_key "note_summaries", "notes"

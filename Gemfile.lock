@@ -109,6 +109,9 @@ GEM
       devise (>= 4.0.0, < 6.0.0)
       warden-jwt_auth (~> 0.10)
     dotenv (3.2.0)
+    dotenv-rails (3.2.0)
+      dotenv (= 3.2.0)
+      railties (>= 6.1)
     drb (2.2.3)
     dry-auto_inject (1.1.0)
       dry-core (~> 1.1)
@@ -394,6 +397,13 @@ GEM
     thruster (0.1.19-arm64-darwin)
     thruster (0.1.19-x86_64-darwin)
     thruster (0.1.19-x86_64-linux)
+    tiktoken_ruby (0.0.16-aarch64-linux)
+    tiktoken_ruby (0.0.16-aarch64-linux-musl)
+    tiktoken_ruby (0.0.16-arm-linux)
+    tiktoken_ruby (0.0.16-arm64-darwin)
+    tiktoken_ruby (0.0.16-x86_64-darwin)
+    tiktoken_ruby (0.0.16-x86_64-linux)
+    tiktoken_ruby (0.0.16-x86_64-linux-musl)
     timeout (0.6.1)
     tsort (0.2.0)
     tzinfo (2.0.6)
@@ -435,6 +445,7 @@ DEPENDENCIES
   debug
   devise
   devise-jwt
+  dotenv-rails
   image_processing (~> 1.2)
   kamal
   pg (~> 1.1)
@@ -448,6 +459,7 @@ DEPENDENCIES
   solid_cache
   solid_queue
   thruster
+  tiktoken_ruby
   tzinfo-data
 
 BUNDLED WITH

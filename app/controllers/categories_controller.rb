@@ -4,7 +4,7 @@ class CategoriesController < ApplicationController
   def index
     cats = current_user.categories.left_joins(:notes).group(:id).select(
       "categories.*, COUNT(note_categories.note_id) AS notes_count"
-    )
+    ).order("categories.title ASC")
 
     uncategorized_count = current_user.notes
       .left_joins(:note_categories)
