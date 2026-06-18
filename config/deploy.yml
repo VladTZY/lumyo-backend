@@ -1,8 +1,8 @@
 # Name of your application. Used to uniquely configure containers.
-service: lumio_server
+service: lumyo_server
 
 # Name of the container image (use your-user/app-name on external registries).
-image: lumio_server
+image: lumyo_server
 
 # Deploy to these servers.
 servers:
@@ -52,7 +52,7 @@ env:
     # WEB_CONCURRENCY: 2
 
     # Match this to any external database server to configure Active Record correctly
-    # Use lumio_server-db for a db accessory server on same machine via local kamal docker network.
+    # Use lumyo_server-db for a db accessory server on same machine via local kamal docker network.
     # DB_HOST: 192.168.0.2
 
     # Log everything from Rails
@@ -69,7 +69,7 @@ aliases:
 # Use a persistent storage volume for sqlite database files and local Active Storage files.
 # Recommended to change this to a mounted volume path that is backed up off server.
 volumes:
-  - "lumio_server_storage:/rails/storage"
+  - "lumyo_server_storage:/rails/storage"
 
 
 # Configure the image builder.
