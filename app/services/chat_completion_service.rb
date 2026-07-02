@@ -4,17 +4,19 @@ class ChatCompletionService
     @user_message = user_message
   end
 
-  def call
+  # Yields response text deltas as they stream in when a block is given.
+  def call(&on_delta)
     raise "No sources selected" if @chat.source_note_ids.blank?
 
     # 1. Search Pinecone for relevant chunks
     context_results = search_sources
 
-    # 2. Save user message
+    # 2. Snapshot history, then save the user message
+    history = @chat.messages.order(:created_at).last(10)
     @chat.messages.create!(role: "user", content: @user_message)
 
     # 3. Build prompt and call LLM
-    response = generate_response(context_results)
+    response = generate_response(context_results, history, &on_delta)
 
     # 4. Save and return assistant message with sources
     sources = build_sources(context_results)
@@ -36,7 +38,7 @@ class ChatCompletionService
     []
   end
 
-  def generate_response(context_results)
+  def generate_response(context_results, history, &on_delta)
     context_text = context_results.map { |hit|
       fields = hit["fields"] || {}
       title = fields["title"] || "Untitled"
@@ -44,20 +46,19 @@ class ChatCompletionService
       "[From: #{title}]\n#{text}"
     }.join("\n\n---\n\n")
 
-    history = @chat.messages.order(:created_at).last(10)
-
-    messages = []
-    messages << { role: "system", content: system_prompt(context_text) }
+    chat = RubyLLM.chat(model: "google/gemini-3-flash-preview")
+    chat.with_instructions(system_prompt(context_text))
 
     history.each do |msg|
-      messages << { role: msg.role == "assistant" ? "assistant" : "user", content: msg.content }
+      chat.add_message(role: msg.role == "assistant" ? :assistant : :user, content: msg.content)
     end
 
-    messages << { role: "user", content: @user_message }
-
-    chat = RubyLLM.chat(model: "google/gemini-3-flash-preview")
-    result = chat.ask(messages)
-    result.content.gsub("\\n", "\n")
+    result = if on_delta
+      chat.ask(@user_message) { |chunk| on_delta.call(chunk.content) if chunk.content.present? }
+    else
+      chat.ask(@user_message)
+    end
+    result.content
   end
 
   def build_sources(context_results)
