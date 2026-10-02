@@ -9,3 +9,8 @@ two:
   title: MyString
   content: MyText
   user: two
+
+uncategorized:
+  title: Loose note
+  content: Not filed anywhere yet
+  user: one
