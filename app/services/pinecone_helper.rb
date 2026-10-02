@@ -20,6 +20,26 @@ module PineconeHelper
     request(:post, "/vectors/delete", { filter: filter, namespace: NAMESPACE }.to_json)
   end
 
+  def delete_ids(ids)
+    ids.each_slice(1000) do |batch|
+      request(:post, "/vectors/delete", { ids: batch, namespace: NAMESPACE }.to_json)
+    end
+  end
+
+  # Yields every vector id in the namespace that starts with prefix.
+  def each_id(prefix: nil)
+    return enum_for(:each_id, prefix: prefix) unless block_given?
+
+    token = nil
+    loop do
+      query = { namespace: NAMESPACE, limit: 100, prefix: prefix, paginationToken: token }.compact
+      page = request(:get, "/vectors/list?#{URI.encode_www_form(query)}") || {}
+      Array(page["vectors"]).each { |v| yield v["id"] }
+      token = page.dig("pagination", "next")
+      break if token.blank?
+    end
+  end
+
   def search(text, top_k: 10, filter: nil)
     body = {
       query: {
