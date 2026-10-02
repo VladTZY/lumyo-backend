@@ -51,7 +51,7 @@ class ChatCompletionServiceTest < ActiveSupport::TestCase
   test "search ignores notes deleted from the chat's sources" do
     gone = notes(:uncategorized)
     @chat.update_columns(source_note_ids: [ @note.id, gone.id ])
-    gone.delete
+    Note.where(id: gone.id).delete_all
 
     run_service
 
