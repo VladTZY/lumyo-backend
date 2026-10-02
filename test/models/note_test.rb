@@ -12,11 +12,11 @@ class NoteTest < ActiveSupport::TestCase
     end
   end
 
-  test "replacing categories reindexes the note" do
+  test "replacing categories reindexes the note once" do
     note = notes(:one)
     other = note.user.categories.create!(title: "Other")
 
-    assert_enqueued_jobs 2, only: EmbedNoteJob do
+    assert_enqueued_jobs 1, only: EmbedNoteJob do
       note.categories = [ other ]
     end
   end
@@ -26,6 +26,20 @@ class NoteTest < ActiveSupport::TestCase
 
     assert_enqueued_with(job: EmbedNoteJob, args: [ note.id ]) do
       note.categories.delete(categories(:one))
+    end
+  end
+
+  test "a rolled-back category change does not reindex and does not block later ones" do
+    assert_no_enqueued_jobs only: EmbedNoteJob do
+      Note.transaction do
+        @note.categories << @category
+        raise ActiveRecord::Rollback
+      end
+    end
+
+    @note.reload
+    assert_enqueued_jobs 1, only: EmbedNoteJob do
+      @note.categories << @category
     end
   end
 
@@ -46,7 +60,8 @@ class NoteTest < ActiveSupport::TestCase
   test "destroying a note drops it from its owner's chats" do
     keep = notes(:one)
     chat = users(:one).chats.create!(title: "Chat", source_note_ids: [ @note.id, keep.id ])
-    string_chat = users(:one).chats.create!(title: "Chat", source_note_ids: [ @note.id.to_s ])
+    string_chat = users(:one).chats.create!(title: "Chat")
+    string_chat.update_columns(source_note_ids: [ @note.id.to_s ])
 
     @note.destroy!
 

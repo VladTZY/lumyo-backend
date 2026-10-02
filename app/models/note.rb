@@ -25,8 +25,18 @@ class Note < ApplicationRecord
     EmbedNoteJob.perform_later(id)
   end
 
+  # Replacing categories fires one callback per added/removed category; the
+  # whole replacement runs in one transaction, so reindex once on commit.
   def enqueue_embedding_for_category_change(_category)
-    enqueue_embedding if persisted?
+    return if !persisted? || @category_reindex_pending
+
+    @category_reindex_pending = true
+    transaction = self.class.current_transaction
+    transaction.after_rollback { @category_reindex_pending = false }
+    transaction.after_commit do
+      @category_reindex_pending = false
+      enqueue_embedding
+    end
   end
 
   def remove_from_index
