@@ -11,7 +11,9 @@ class ChatCompletionService
 
   # Yields response text deltas as they stream in when a block is given.
   def call(&on_delta)
-    raise "No sources selected" if @chat.source_note_ids.blank?
+    # Deleted notes can linger in source_note_ids; never search for them.
+    @source_note_ids = @chat.available_source_note_ids
+    raise "No sources selected" if @source_note_ids.empty?
 
     # 1. Search Pinecone for relevant chunks
     context_results = search_sources
@@ -33,7 +35,7 @@ class ChatCompletionService
 
   def search_sources
     filter = {
-      "note_id" => { "$in" => @chat.source_note_ids },
+      "note_id" => { "$in" => @source_note_ids },
       "user_id" => @chat.user_id
     }
 

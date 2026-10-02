@@ -11,7 +11,7 @@ class MessagesController < ApplicationController
       return
     end
 
-    if @chat.source_note_ids.blank?
+    if @chat.available_source_note_ids.empty?
       render json: { error: "No sources selected. Please select at least one note." }, status: :unprocessable_entity
       return
     end

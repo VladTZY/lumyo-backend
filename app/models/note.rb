@@ -13,6 +13,7 @@ class Note < ApplicationRecord
   validates :content, presence: true
 
   after_save_commit :enqueue_embedding, if: :should_embed?
+  after_destroy_commit :remove_from_index
 
   private
 
@@ -26,5 +27,10 @@ class Note < ApplicationRecord
 
   def enqueue_embedding_for_category_change(_category)
     enqueue_embedding if persisted?
+  end
+
+  def remove_from_index
+    RemoveNoteFromIndexJob.perform_later(id)
+    Chat.remove_source_note_id(user_id, id)
   end
 end

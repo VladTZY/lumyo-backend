@@ -10,6 +10,14 @@ class NoteEmbeddingService
 
     records = chunks.map { |chunk| build_record(chunk) }
     PineconeHelper.upsert_records(records)
+
+    # The note may have been deleted while this job was running; its removal
+    # job could already have run, so clean up the vectors we just wrote.
+    unless Note.exists?(@note.id)
+      PineconeHelper.delete_by_filter({ "note_id" => @note.id })
+      return
+    end
+
     @note.update!(pinecone_uploaded: true, pinecone_uploaded_at: Time.current)
   end
 
