@@ -5,6 +5,9 @@ class NoteChunker
   SHORT_NOTE_THRESHOLD = 200
   # Must stay in sync with #build_prefix.
   PREFIX_RE = /\Atitle: .*?\ntags: [^\n]*\n\n/m
+  # A list item line: "-", "*", "+", "1." or the mobile editor's "•" bullet,
+  # followed by whitespace.
+  LIST_ITEM_RE = /\A\s*(?:[-*+•]|\d+\.)\s/
 
   # Removes the indexing prefix from a stored chunk, leaving the note body slice.
   def self.strip_prefix(text)
@@ -123,12 +126,12 @@ class NoteChunker
         next
       end
 
-      if line.match?(/\A\s*(?:[-*+]|\d+\.)\s/)
+      if line.match?(LIST_ITEM_RE)
         blocks << current unless current.strip.empty?
         current = +""
         list_block = +line
         i += 1
-        while i < lines.length && lines[i].match?(/\A\s*(?:[-*+]|\d+\.)\s/)
+        while i < lines.length && lines[i].match?(LIST_ITEM_RE)
           list_block << lines[i]
           i += 1
         end
