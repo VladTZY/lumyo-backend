@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   resource :autocategorize_all, only: [ :create ], controller: "autocategorize_all"
+  resources :transcriptions, only: [ :create ]
   resources :categories, only: [ :index, :show, :create, :update, :destroy ]
   resources :chats, only: [ :index, :show, :create, :update, :destroy ] do
     resources :messages, only: [ :create ]

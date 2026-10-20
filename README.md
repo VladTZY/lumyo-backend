@@ -49,6 +49,7 @@ cp .env.example .env
 | `PINECONE_API_KEY`    | Pinecone API key                              |
 | `PINECONE_INDEX_HOST` | Pinecone index host URL                       |
 | `REDIS_URL`           | Redis connection URL (e.g. `redis://localhost:6379/0`) |
+| `TRANSCRIPTION_MODELS` | Optional. Comma-separated OpenRouter speech-to-text models, first choice first. Default: `openai/whisper-large-v3-turbo,mistralai/voxtral-mini-transcribe` |
 
 These are loaded via `dotenv-rails` in development. **Never commit `.env` / `.envrc`** — they are gitignored.
 
@@ -108,6 +109,16 @@ Authentication uses JWT. On `login` / `signup`, the token is returned in the `Au
 | `POST`                   | `/chats/:id/messages`     | Send a message (RAG over chat's notes) |
 
 A chat carries a `source_note_ids` array; messages are answered using only those notes as context.
+
+### Transcriptions
+
+| Method | Path              | Description                                  |
+| ------ | ----------------- | -------------------------------------------- |
+| `POST` | `/transcriptions` | Turn a voice recording into text             |
+
+Send multipart form data: `audio` (the recording; m4a, mp4, aac, webm, ogg, mp3, wav or flac, up to 25 MB) and an optional two-letter `language` hint. The response is `{ "text": "...", "model": "..." }`. Requests are limited to 30 per user every 10 minutes, since each one is a paid provider call.
+
+The server tries the models in `TRANSCRIPTION_MODELS` in order and moves to the next one only when a model fails in a way another could fix (an unsupported format, an outage). To change models, change that variable; no app release is needed. To change provider, write a client with the same `transcribe(audio:, format:, model:, language:)` method as `Transcription::OpenRouterClient` and pass it to `Transcriber`. Audio goes only to providers that don't keep it (`data_collection: "deny"`) and is never stored by the server.
 
 ### Health
 
