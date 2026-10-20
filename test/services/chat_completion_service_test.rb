@@ -4,8 +4,9 @@ class ChatCompletionServiceTest < ActiveSupport::TestCase
   class FakeLLMChat
     attr_reader :messages, :asked
 
-    def initialize
+    def initialize(reply = "Answer\n[SOURCES: none]")
       @messages = []
+      @reply = reply
     end
 
     def with_instructions(_text) = self
@@ -16,7 +17,7 @@ class ChatCompletionServiceTest < ActiveSupport::TestCase
 
     def ask(content)
       @asked = content
-      Struct.new(:content).new("Answer\n[SOURCES: none]")
+      Struct.new(:content).new(@reply)
     end
   end
 
@@ -56,6 +57,41 @@ class ChatCompletionServiceTest < ActiveSupport::TestCase
     run_service
 
     assert_equal [ @note.id ], @searched_filters.first.dig("note_id", "$in")
+  end
+
+  test "persists the full chunk body without the indexing prefix as the source chunk_text" do
+    body = "Paragraph about planning. " * 60
+    hit = { "fields" => { "note_id" => @note.id, "title" => "T", "text" => "title: T\ntags: a, b\n\n#{body}" } }
+    search = ->(_text, top_k:, filter:) { { "result" => { "hits" => [ hit ] } } }
+    llm = FakeLLMChat.new("Answer\n[SOURCES: #{@note.id}]")
+
+    message = with_stub(PineconeHelper, :search, search) do
+      with_stub(RubyLLM, :chat, ->(**) { llm }) do
+        ChatCompletionService.new(@chat, "Current question").call
+      end
+    end
+
+    chunk_text = message.reload.sources.first["chunk_text"]
+    assert_operator body.length, :>, 1000
+    assert_equal body, chunk_text
+    assert_no_match(/\.\.\.\z/, chunk_text)
+  end
+
+  test "caps an oversized chunk body at 4000 characters with no omission marker" do
+    body = "x" * 9_000
+    hit = { "fields" => { "note_id" => @note.id, "title" => "T", "text" => "title: T\ntags: a\n\n#{body}" } }
+    search = ->(_text, top_k:, filter:) { { "result" => { "hits" => [ hit ] } } }
+    llm = FakeLLMChat.new("Answer\n[SOURCES: #{@note.id}]")
+
+    message = with_stub(PineconeHelper, :search, search) do
+      with_stub(RubyLLM, :chat, ->(**) { llm }) do
+        ChatCompletionService.new(@chat, "Current question").call
+      end
+    end
+
+    chunk_text = message.reload.sources.first["chunk_text"]
+    assert_equal 4_000, chunk_text.length
+    assert_equal body.first(4_000), chunk_text
   end
 
   test "raises when every selected note is gone" do

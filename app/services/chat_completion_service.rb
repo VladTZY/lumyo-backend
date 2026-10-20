@@ -4,6 +4,10 @@ class ChatCompletionService
   SOURCE_MARKER_START = "[SOURCES:".freeze
   SOURCE_MARKER_RE = /\s*\[SOURCES:\s*([^\]]*)\]\s*\z/
 
+  # Chunks split only on ". ", so one can be arbitrarily long. Head slice stays
+  # an exact substring of the note, so the client can still locate it.
+  MAX_SOURCE_CHUNK_CHARS = 4_000
+
   def initialize(chat, user_message)
     @chat = chat
     @user_message = user_message
@@ -135,7 +139,7 @@ class ChatCompletionService
       {
         "note_id" => note_id,
         "title" => fields["title"] || "Untitled",
-        "chunk_text" => (fields["text"] || "").truncate(200)
+        "chunk_text" => NoteChunker.strip_prefix(fields["text"]).first(MAX_SOURCE_CHUNK_CHARS)
       }
     }.uniq { |s| s["note_id"] }
 

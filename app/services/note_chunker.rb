@@ -3,6 +3,13 @@ class NoteChunker
   TARGET_CHUNK_TOKENS = 300
   OVERLAP_TOKENS = 75
   SHORT_NOTE_THRESHOLD = 200
+  # Must stay in sync with #build_prefix.
+  PREFIX_RE = /\Atitle: .*?\ntags: [^\n]*\n\n/m
+
+  # Removes the indexing prefix from a stored chunk, leaving the note body slice.
+  def self.strip_prefix(text)
+    text.to_s.sub(PREFIX_RE, "")
+  end
 
   def initialize(note)
     @note = note
