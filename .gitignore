@@ -51,3 +51,4 @@
 # Ignore local editor/tooling caches
 /.ruby-lsp
 /.claude
+.gstack/
